@@ -1,32 +1,56 @@
 import React from "react";
-
-function QuestionItem({ questions, question, onDelete, onAnswerChange }) {
+function QuestionItem({ question, API, questions, setQuestions }) {
   const { id, prompt, answers, correctIndex } = question;
-
-  function deleteQuestion() {
-    onDelete(id);
-  }
-  function answerChange(event) {
-    onAnswerChange(id, parseInt(event.target.value));
-  }
-
   const options = answers.map((answer, index) => (
-    <option key={index} value={index}>
-      {answer}
+    <option key = {index}  value = {index}>
+    {answer}
     </option>
-  ));
+  )); 
+
+
+  function deleteQuestion(id) {
+    fetch(`${API}/${id}`, {
+      method: 'DELETE', 
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log(`deleted question with id: ${id}`)
+      const updatedQuestions = 
+      questions.filter((question) => question.id!==id)
+      setQuestions(() => updatedQuestions); 
+    })
+  }
+  function changeAnswer(id, correctIndex) {
+    fetch(`${API}/${id}`, {
+      method: 'PATCH', 
+      headers: {
+        'Content-Type': 'application/json', 
+      }, 
+      body: JSON.stringify({'correctIndex': correctIndex})
+    })
+    .then((response) => response.json())
+    .then(data => console.log(data))
+    const updatedQuestions = questions.map(question => {
+      if (question.id === id ) {
+        return {...question, correctIndex}
+      }
+      else {
+        return question
+      }
+    })
+  }
 
   return (
     <li>
-      <h4>Question {questions.indexOf(question) + 1}</h4>
+      <h4>Question {id}</h4>
       <h5>Prompt: {prompt}</h5>
       <label>
         Correct Answer:
-        <select defaultValue={correctIndex} onChange={answerChange}>
-          {options}
-        </select>
+        <select onChange= {(event) => {
+          changeAnswer(id, event.target.value); 
+        }} defaultValue={correctIndex}>{options}</select>
       </label>
-      <button onClick={deleteQuestion}>Delete Question</button>
+      <button onClick ={() => deleteQuestion(id)} >Delete Question</button>
     </li>
   );
 }
